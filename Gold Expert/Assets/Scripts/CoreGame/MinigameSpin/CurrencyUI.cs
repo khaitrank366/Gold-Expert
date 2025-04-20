@@ -10,20 +10,20 @@ public class CurrencyUI : MonoBehaviour
     {
         if (PlayFabManager.Instance != null)
         {
-            PlayFabManager.Instance.OnCoinChanged += UpdateCoinUI;
-            PlayFabManager.Instance.OnLightningChanged += UpdateLightningUI;
+            CurrencyManager.Instance.OnCoinChanged += UpdateCoinUI;
+            CurrencyManager.Instance.OnLightningChanged += UpdateLightningUI;
 
-            UpdateCoinUI(PlayFabManager.Instance.Coin);
-            UpdateLightningUI(PlayFabManager.Instance.Lightning);
+            UpdateCoinUI(CurrencyManager.Instance.CurrentCoin);
+            UpdateLightningUI(CurrencyManager.Instance.CurrentLightning);
         }
     }
 
     void OnDisable()
     {
-        if (PlayFabManager.Instance != null)
+        if (CurrencyManager.Instance != null)
         {
-            PlayFabManager.Instance.OnCoinChanged -= UpdateCoinUI;
-            PlayFabManager.Instance.OnLightningChanged -= UpdateLightningUI;
+            CurrencyManager.Instance.OnCoinChanged -= UpdateCoinUI;
+            CurrencyManager.Instance.OnLightningChanged -= UpdateLightningUI;
         }
     }
 

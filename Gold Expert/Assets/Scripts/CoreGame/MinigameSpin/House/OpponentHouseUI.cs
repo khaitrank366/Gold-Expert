@@ -37,7 +37,7 @@ public class OpponentHouseUI : MonoBehaviour
         foreach (var t in targets)
             t.Disable();
 
-        PlayFabManager.Instance.AddCoin(1000);
+        CurrencyManager.Instance.AddCoin(1000);
         Debug.Log($"💥 Phá slot {index} → nhận 1000 coin");
 
         Hide();

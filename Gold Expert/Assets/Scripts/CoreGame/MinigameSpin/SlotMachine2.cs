@@ -77,7 +77,7 @@ public class SlotMachine2 : MonoBehaviour
     public void StartSpin()
     {
         if (!canPressSpin || isSpinning || isInOpponentHouse) return;
-        if (!PlayFabManager.Instance.SpendLightning(1))
+        if (!CurrencyManager.Instance.SpendLightning(1))
         {
             Debug.Log("Không đủ sấm sét để quay.");
             return;
@@ -90,9 +90,9 @@ public class SlotMachine2 : MonoBehaviour
         // Tạm thời ép kết quả
         serverResult = new List<symbolItem>
         {
-            symbolItem.item3,
-            symbolItem.item3,
-            symbolItem.item3
+            symbolItem.hammer,
+            symbolItem.hammer,
+            symbolItem.hammer
         };
 
         for (int i = 0; i < reels.Length; i++)
@@ -179,16 +179,16 @@ public class SlotMachine2 : MonoBehaviour
             switch (results[0])
             {
                 case symbolItem.item1:
-                    PlayFabManager.Instance.AddCoin(2000);
+                    CurrencyManager.Instance.AddCoin(2000);
                     AutoSpinIfNeeded();
                     break;
 
                 case symbolItem.item2:
-                    PlayFabManager.Instance.AddCoin(1000);
+                    CurrencyManager.Instance.AddCoin(1000);
                     AutoSpinIfNeeded();
                     break;
                 case symbolItem.item3:
-                    PlayFabManager.Instance.AddLightning(1);
+                    CurrencyManager.Instance.AddLightning(1);
                     AutoSpinIfNeeded();
                     break;
                 case symbolItem.hammer:

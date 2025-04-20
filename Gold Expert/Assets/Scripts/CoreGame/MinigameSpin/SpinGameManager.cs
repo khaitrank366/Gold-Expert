@@ -28,11 +28,11 @@ public class SpinGameManager : MonoBehaviour
 	}
 
 
-	// --- Coin ---
+	// --- CurrentCoin ---
 	public void AddCoin(int amount)
 	{
 		coin += amount;
-		Debug.Log("🪙 Coin added: " + amount + " → total: " + coin);
+		Debug.Log("🪙 CurrentCoin added: " + amount + " → total: " + coin);
 		OnCoinChanged?.Invoke(coin);
 	}
 
@@ -44,7 +44,7 @@ public class SpinGameManager : MonoBehaviour
 		return true;
 	}
 
-	// --- Lightning ---
+	// --- CurrentLightning ---
 	public void AddLightning(int amount)
 	{
 		lightning += amount;
@@ -60,7 +60,7 @@ public class SpinGameManager : MonoBehaviour
 		}
 
 		lightning -= amount;
-		Debug.Log("⚡ Lightning spent: " + amount + " → remaining: " + lightning);
+		Debug.Log("⚡ CurrentLightning spent: " + amount + " → remaining: " + lightning);
 		OnLightningChanged?.Invoke(lightning);
 		return true;
 	}
