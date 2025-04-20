@@ -6,241 +6,233 @@ using System.Linq;
 
 public enum symbolItem
 {
-	item1,
-	item2,
-	item3,
-	hammer
+    item1,
+    item2,
+    item3,
+    hammer
 }
 
 public class SlotMachine2 : MonoBehaviour
 {
-	[SerializeField] private CanvasGroup slotCanvasGroup;
-	public Toggle autoSpinToggle;
-	public SlotReel2[] reels;
-	public GameObject symbolPrefab;
-	public Sprite[] symbolSprites;
-	public Button spinButton;
-	public float spinSpeed = 2500f;
-	public float stopDelay = 0.6f;
-	private bool isSpinning = false;
-	private bool canPressSpin = true;
-	private bool blockAutoSpin = false;
-	private bool isInOpponentHouse = false;
+    [SerializeField] private CanvasGroup slotCanvasGroup;
+    public Toggle autoSpinToggle;
+    public SlotReel2[] reels;
+    public GameObject symbolPrefab;
+    public Sprite[] symbolSprites;
+    public Button spinButton;
+    public float spinSpeed = 2500f;
+    public float stopDelay = 0.6f;
+    private bool isSpinning = false;
+    private bool canPressSpin = true;
+    private bool isInOpponentHouse = false;
 
-	public static SlotMachine2 Instance { get; private set; }
+    public static SlotMachine2 Instance { get; private set; }
 
-	private int stoppedCount = 0;
-	private List<symbolItem> serverResult;
-	private Dictionary<symbolItem, Sprite> itemToSprite;
+    private int stoppedCount = 0;
+    private List<symbolItem> serverResult;
+    private Dictionary<symbolItem, Sprite> itemToSprite;
 
-	void Start()
-	{
-		spinButton.onClick.AddListener(StartSpin);
-		InitMapping();
-		InitReels();
-	}
-	private void Awake()
-	{
-		Instance = this;
-	}
+    void Awake()
+    {
+        Instance = this;
+    }
 
-	void InitMapping()
-	{
-		if (symbolSprites.Length != System.Enum.GetValues(typeof(symbolItem)).Length)
-		{
-			return;
-		}
+    void Start()
+    {
+        spinButton.onClick.AddListener(StartSpin);
+        InitMapping();
+        InitReels();
+    }
 
-		itemToSprite = new Dictionary<symbolItem, Sprite>
-		{
-			{ symbolItem.item1, symbolSprites[0] },
-			{ symbolItem.item2, symbolSprites[1] },
-			{ symbolItem.item3, symbolSprites[2] },
-			{ symbolItem.hammer, symbolSprites[3] }
-		};
-	}
+    void InitMapping()
+    {
+        if (symbolSprites.Length != System.Enum.GetValues(typeof(symbolItem)).Length)
+        {
+            Debug.LogError("Thiếu Sprite trong danh sách symbolSprites");
+            return;
+        }
 
-	void InitReels()
-	{
-		foreach (var reel in reels)
-		{
-			reel.symbolPrefab = symbolPrefab;
-			reel.symbolSprites = symbolSprites;
-			reel.forcedWinSpriteIndex = null;
+        itemToSprite = new Dictionary<symbolItem, Sprite>
+        {
+            { symbolItem.item1, symbolSprites[0] },
+            { symbolItem.item2, symbolSprites[1] },
+            { symbolItem.item3, symbolSprites[2] },
+            { symbolItem.hammer, symbolSprites[3] }
+        };
+    }
 
-			reel.Init();
-			reel.SetSpeed(0f);
-		}
-	}
+    void InitReels()
+    {
+        foreach (var reel in reels)
+        {
+            reel.symbolPrefab = symbolPrefab;
+            reel.symbolSprites = symbolSprites;
+            reel.forcedWinSpriteIndex = null;
 
-	public void StartSpin()
-	{
-		if (!canPressSpin || isSpinning || isInOpponentHouse) return;
-		if (!SpinGameManager.Instance.SpendLightning(1))
-		{
-			Debug.Log("Không đủ sấm sét để quay.");
-			return;
-		}
-		canPressSpin = false;
-		isSpinning = true;
-		stoppedCount = 0;
+            reel.Init();
+            reel.SetSpeed(0f);
+        }
+    }
 
-		serverResult = new List<symbolItem>
-		{
-			symbolItem.hammer,
-			symbolItem.hammer,
-			symbolItem.hammer
-		};
+    public void StartSpin()
+    {
+        if (!canPressSpin || isSpinning || isInOpponentHouse) return;
+        if (!PlayFabManager.Instance.SpendLightning(1))
+        {
+            Debug.Log("Không đủ sấm sét để quay.");
+            return;
+        }
 
-		for (int i = 0; i < reels.Length; i++)
-		{
-			int spriteIndex = (int)serverResult[i];
-			reels[i].forcedWinSpriteIndex = spriteIndex;
+        canPressSpin = false;
+        isSpinning = true;
+        stoppedCount = 0;
 
-			foreach (Transform child in reels[i].transform)
-				child.DOKill();
+        // Tạm thời ép kết quả
+        serverResult = new List<symbolItem>
+        {
+            symbolItem.item3,
+            symbolItem.item3,
+            symbolItem.item3
+        };
 
-			reels[i].Init();
-			reels[i].SetSpeed(spinSpeed);
-		}
+        for (int i = 0; i < reels.Length; i++)
+        {
+            int spriteIndex = (int)serverResult[i];
+            reels[i].forcedWinSpriteIndex = spriteIndex;
 
-		Invoke(nameof(StopSpin), 1f);
-	}
+            foreach (Transform child in reels[i].transform)
+                child.DOKill();
 
-	void StopSpin()
-	{
-		float baseDelay = 0.8f;
-		float spacing = 0.5f;
-		float extraDelayLast = 0.5f;
+            reels[i].Init();
+            reels[i].SetSpeed(spinSpeed);
+        }
 
-		for (int i = 0; i < reels.Length; i++)
-		{
-			float delay = baseDelay + i * spacing;
+        Invoke(nameof(StopSpin), 1f);
+    }
 
-			if (i == reels.Length - 1)
-			{
-				delay += extraDelayLast;
-			}
+    void StopSpin()
+    {
+        float baseDelay = 0.8f;
+        float spacing = 0.5f;
+        float extraDelayLast = 0.5f;
 
-			SlowDown(reels[i], delay);
-		}
-	}
+        for (int i = 0; i < reels.Length; i++)
+        {
+            float delay = baseDelay + i * spacing;
 
-	void SlowDown(SlotReel2 reel, float delay)
-	{
-		DOVirtual.DelayedCall(delay, () =>
-		{
-			reel.SetSpeed(0f);
-			reel.StopWithTween(1f);
+            if (i == reels.Length - 1)
+                delay += extraDelayLast;
 
-			stoppedCount++;
-			if (stoppedCount == reels.Length)
-			{
-				DOVirtual.DelayedCall(0.6f, () =>
-				{
-					CheckResult();
-					isSpinning = false;
+            SlowDown(reels[i], delay);
+        }
+    }
 
-					DOVirtual.DelayedCall(0.5f, () =>
-					{
-						canPressSpin = true;
-						if (autoSpinToggle == null || !autoSpinToggle.isOn)
-						{
-							spinButton.interactable = true;
-						}
+    void SlowDown(SlotReel2 reel, float delay)
+    {
+        DOVirtual.DelayedCall(delay, () =>
+        {
+            reel.SetSpeed(0f);
+            reel.StopWithTween(1f);
 
-						if (autoSpinToggle != null && autoSpinToggle.isOn)
-						{
-							StartSpin();
-						}
-					});
-				});
-			}
-		});
-	}
-	void OpenOpponentHouse()
-	{
-		isInOpponentHouse = true;
+            stoppedCount++;
+            if (stoppedCount == reels.Length)
+            {
+                DOVirtual.DelayedCall(0.6f, () =>
+                {
+                    CheckResult();
+                    isSpinning = false;
 
-		slotCanvasGroup.alpha = 0;
-		slotCanvasGroup.interactable = false;
-		slotCanvasGroup.blocksRaycasts = false;
+                    DOVirtual.DelayedCall(0.5f, () =>
+                    {
+                        canPressSpin = true;
+                        if (autoSpinToggle == null || !autoSpinToggle.isOn)
+                            spinButton.interactable = true;
 
-		var data = MockOpponentHouseService.GetRandomHouse(symbolSprites);
-		OpponentHouseUI.Instance.ShowHouse(data);
-	}
+                        if (autoSpinToggle != null && autoSpinToggle.isOn)
+                            StartSpin();
+                    });
+                });
+            }
+        });
+    }
 
-	void AutoSpinIfNeeded()
-	{
-		if (isInOpponentHouse) return;
+    void CheckResult()
+    {
+        var results = new List<symbolItem>();
 
-		if (autoSpinToggle != null && autoSpinToggle.isOn)
-		{
-			StartSpin();
-		}
-	}
+        foreach (var reel in reels)
+        {
+            Sprite sprite = reel.GetCenterSymbol();
+            if (sprite == null) return;
 
+            int index = symbolSprites.ToList().IndexOf(sprite);
+            if (index >= 0 && index < symbolSprites.Length)
+                results.Add((symbolItem)index);
+            else
+                return;
+        }
 
+        if (results.All(r => r == results[0]))
+        {
+            Debug.Log($"WIN: {results[0]}");
 
-	public void BackToSpin()
-	{
-		slotCanvasGroup.alpha = 1;
-		slotCanvasGroup.interactable = true;
-		slotCanvasGroup.blocksRaycasts = true;
+            switch (results[0])
+            {
+                case symbolItem.item1:
+                    PlayFabManager.Instance.AddCoin(2000);
+                    AutoSpinIfNeeded();
+                    break;
 
-		Debug.Log("⬅ Đã quay lại màn hình slot");
-	}
+                case symbolItem.item2:
+                    PlayFabManager.Instance.AddCoin(1000);
+                    AutoSpinIfNeeded();
+                    break;
+                case symbolItem.item3:
+                    PlayFabManager.Instance.AddLightning(1);
+                    AutoSpinIfNeeded();
+                    break;
+                case symbolItem.hammer:
+                    Debug.Log("🛠 Búa xuất hiện → chuyển qua phá nhà đối phương");
+                    OpenOpponentHouse();
+                    break;
+            }
+        }
+        else
+        {
+            Debug.Log($"LOSE: {string.Join(", ", results)}");
+        }
+    }
 
-	void CheckResult()
-	{
-		var results = new List<symbolItem>();
+    void AutoSpinIfNeeded()
+    {
+        if (isInOpponentHouse) return;
 
-		foreach (var reel in reels)
-		{
-			Sprite sprite = reel.GetCenterSymbol();
-			if (sprite == null)
-			{
-				return;
-			}
+        if (autoSpinToggle != null && autoSpinToggle.isOn)
+        {
+            StartSpin();
+        }
+    }
 
-			int index = symbolSprites.ToList().IndexOf(sprite);
-			if (index >= 0 && index < symbolSprites.Length)
-			{
-				results.Add((symbolItem)index);
-			}
-			else
-			{
-				return;
-			}
-		}
+    void OpenOpponentHouse()
+    {
+        isInOpponentHouse = true;
 
-		if (results.All(r => r == results[0]))
-		{
-			Debug.Log($"WIN: {results[0]}");
+        slotCanvasGroup.alpha = 0;
+        slotCanvasGroup.interactable = false;
+        slotCanvasGroup.blocksRaycasts = false;
 
-			switch (results[0])
-			{
-				case symbolItem.item1:
-					SpinGameManager.Instance.AddCoin(2000);
-					AutoSpinIfNeeded();
-					break;
+        var data = MockOpponentHouseService.GetRandomHouse(symbolSprites);
+        OpponentHouseUI.Instance.ShowHouse(data);
+    }
 
-				case symbolItem.item2:
-					SpinGameManager.Instance.AddCoin(1000);
-					AutoSpinIfNeeded();
-					break;
+    public void BackToSpin()
+    {
+        slotCanvasGroup.alpha = 1;
+        slotCanvasGroup.interactable = true;
+        slotCanvasGroup.blocksRaycasts = true;
 
-				case symbolItem.hammer:
-					Debug.Log("🛠 Búa xuất hiện → chuyển qua phá nhà đối phương");
-					OpenOpponentHouse();
-					break;
-			}
+        isInOpponentHouse = false;
 
-		}
-		else
-		{
-			Debug.Log($"LOSE: {string.Join(", ", results)}");
-		}
-
-	}
+        Debug.Log("⬅ Đã quay lại màn hình slot");
+    }
 }

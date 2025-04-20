@@ -32,19 +32,20 @@ public class OpponentHouseUI : MonoBehaviour
 			opponentNameText.text = $"Đang phá nhà của: {data.opponentName}";
 	}
 
-	public void OnTargetSelected(int index)
-	{
-		foreach (var t in targets)
-			t.Disable();
+    public void OnTargetSelected(int index)
+    {
+        foreach (var t in targets)
+            t.Disable();
 
-		SpinGameManager.Instance.AddCoin(1000);
-		Debug.Log($"💥 Phá slot {index} → nhận 1000 coin");
+        PlayFabManager.Instance.AddCoin(1000);
+        Debug.Log($"💥 Phá slot {index} → nhận 1000 coin");
 
-		Hide();
-		SlotMachine2.Instance.BackToSpin();
-	}
+        Hide();
+        SlotMachine2.Instance.BackToSpin();
+    }
 
-	public void Hide()
+
+    public void Hide()
 	{
 		canvasGroup.alpha = 0;
 		canvasGroup.interactable = false;
