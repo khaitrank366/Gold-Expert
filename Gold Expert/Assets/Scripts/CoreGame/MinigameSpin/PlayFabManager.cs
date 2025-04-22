@@ -5,7 +5,7 @@ using UnityEngine;
 public class PlayFabManager : MonoBehaviour
 {
     public static PlayFabManager Instance;
-
+    public string PlayfabId;
     private void Awake()
     {
         if (Instance == null) 
@@ -28,9 +28,10 @@ public class PlayFabManager : MonoBehaviour
         };
 
         PlayFabClientAPI.LoginWithCustomID(request, 
-            result =>
+            result =>   
             {
                 Debug.Log("✅ Đăng nhập PlayFab thành công");
+                PlayfabId=result.PlayFabId;
                 LoadPlayerData();
             },
             error =>
