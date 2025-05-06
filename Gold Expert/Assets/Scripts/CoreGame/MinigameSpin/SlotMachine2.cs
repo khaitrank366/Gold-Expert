@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using DG.Tweening;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.VisualScripting;
 
 public enum symbolItem
 {
@@ -12,7 +13,7 @@ public enum symbolItem
     hammer
 }
 
-public class SlotMachine2 : MonoBehaviour
+public class SlotMachine : Singleton<SlotMachine>,IModalUI
 {
     [SerializeField] private CanvasGroup slotCanvasGroup;
     public Toggle autoSpinToggle;
@@ -26,16 +27,11 @@ public class SlotMachine2 : MonoBehaviour
     private bool canPressSpin = true;
     private bool isInOpponentHouse = false;
 
-    public static SlotMachine2 Instance { get; private set; }
-
     private int stoppedCount = 0;
     private List<symbolItem> serverResult;
     private Dictionary<symbolItem, Sprite> itemToSprite;
 
-    void Awake()
-    {
-        Instance = this;
-    }
+
 
     void Start()
     {
@@ -74,10 +70,10 @@ public class SlotMachine2 : MonoBehaviour
         }
     }
 
-    public void StartSpin()
+    public async  void StartSpin()
     {
         if (!canPressSpin || isSpinning || isInOpponentHouse) return;
-        if (!CurrencyManager.Instance.SpendLightning(1))
+        if (!await CurrencyManager.Instance.SpendLightning(1))
         {
             Debug.Log("Không đủ sấm sét để quay.");
             return;
@@ -213,26 +209,51 @@ public class SlotMachine2 : MonoBehaviour
         }
     }
 
+    #region Show/Hide Modal
+
     void OpenOpponentHouse()
     {
         isInOpponentHouse = true;
 
-        slotCanvasGroup.alpha = 0;
-        slotCanvasGroup.interactable = false;
-        slotCanvasGroup.blocksRaycasts = false;
+        Hide();
 
         var data = MockOpponentHouseService.GetRandomHouse(symbolSprites);
-        OpponentHouseUI.Instance.ShowHouse(data);
+       GameUI.Instance.OpponentHouseUI.ShowHouse(data);
     }
 
     public void BackToSpin()
     {
-        slotCanvasGroup.alpha = 1;
-        slotCanvasGroup.interactable = true;
-        slotCanvasGroup.blocksRaycasts = true;
+        Show();
 
         isInOpponentHouse = false;
 
         Debug.Log("⬅ Đã quay lại màn hình slot");
     }
+    
+
+    public void Show()
+    {
+        slotCanvasGroup.alpha = 1;
+        slotCanvasGroup.interactable = true;
+        slotCanvasGroup.blocksRaycasts = true;   
+    }
+
+    public void Hide()
+    {
+        slotCanvasGroup.alpha = 0;
+        slotCanvasGroup.interactable = false;
+        slotCanvasGroup.blocksRaycasts = false;
+    }
+
+    public bool IsVisible()
+    {
+        return slotCanvasGroup.alpha > 0f;
+    }
+
+    public void SwitchToMyBuilding()
+    {
+        Hide();
+        BuildingManager.Instance.Show();
+    }
+    #endregion
 }

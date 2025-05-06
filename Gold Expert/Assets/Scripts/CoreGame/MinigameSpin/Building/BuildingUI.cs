@@ -1,4 +1,5 @@
 
+using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -16,10 +17,16 @@ public class BuildingUI : MonoBehaviour
     public string buildingId;
     public Sprite[] levelSprites; // Sprite cho các level 1-5
 
-    private void Start()
+
+    public void Init()
     {
         upgradeButton.onClick.AddListener(OnClickUpgrade);
         Refresh();
+    }
+
+    private void OnDisable()
+    {
+        upgradeButton.onClick.RemoveAllListeners();
     }
 
     private void OnClickUpgrade()
@@ -30,21 +37,21 @@ public class BuildingUI : MonoBehaviour
 
     private void Refresh()
     {
-        int level = BuildingManager.Instance.GetCurrentLevel(buildingId);
-
-        if (levelSprites != null && levelSprites.Length > 0)
-        {
-            int index = Mathf.Clamp(level - 1, 0, levelSprites.Length - 1);
-            buildingImage.sprite = levelSprites[index];
-        }
-
-        int cost = BuildingManager.Instance.GetUpgradeCost(buildingId, level);
-        costText.text = cost.ToString();
-
-        // ✨ Update thêm Level Text:
-        if (levelText != null)
-        {
-            levelText.text = "Level " + level.ToString();
-        }
+        // int level = BuildingManager.Instance.GetCurrentLevel(buildingId);
+        // if (level >= 5) return;
+        // if (levelSprites != null && levelSprites.Length > 0)
+        // {
+        //     int index = Mathf.Clamp(level - 1, 0, levelSprites.Length - 1);
+        //     buildingImage.sprite = levelSprites[index];
+        // }
+        //
+        // int cost = BuildingManager.Instance.GetUpgradeCost(buildingId, level);
+        // costText.text = cost.ToString();
+        //
+        // // ✨ Update thêm Level Text:
+        // if (levelText != null)
+        // {
+        //     levelText.text = "Level " + level.ToString();
+        // }
     }
 }

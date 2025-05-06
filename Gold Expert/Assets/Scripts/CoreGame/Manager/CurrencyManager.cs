@@ -1,5 +1,6 @@
-using System;
+    using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using PlayFab;
 using PlayFab.ClientModels;
 using UnityEngine;
@@ -9,91 +10,126 @@ public class CurrencyManager : Singleton<CurrencyManager>
     public event Action<int> OnCoinChanged;
     public event Action<int> OnLightningChanged;
 
-    public int CurrentCoin { get; private set; }
-    public int CurrentLightning { get; private set; }
-
-    private const string COIN_KEY = "CO";
-    private const string LIGHTNING_KEY = "LI";
-
-    #region Load
-    public void LoadCurrencies()
+    private int _currentCoin;
+    public int CurrentCoin
     {
+        get => _currentCoin;
+         set
+        {
+            if (_currentCoin != value)
+            {
+                _currentCoin = value;
+                OnCoinChanged?.Invoke(_currentCoin);
+            }
+        }
+    }
+    private int _currentLightning;
+    public int CurrentLightning
+    {
+        get => _currentLightning;
+         set
+        {
+            if (_currentLightning != value)
+            {
+                _currentLightning = value;
+                OnLightningChanged?.Invoke(_currentLightning);
+            }
+        }
+    }
+    
+    private  string COIN_KEY=PlayerDataKey.Coin.ToString();
+    private  string LIGHTNING_KEY = "LI";
+    
+    #region Load
+    public async Task LoadCurrencies()
+    {
+        var tcs = new TaskCompletionSource<GetUserInventoryResult>();
+
         PlayFabClientAPI.GetUserInventory(new GetUserInventoryRequest(),
             result =>
             {
-                CurrentCoin = result.VirtualCurrency.ContainsKey(COIN_KEY) ? result.VirtualCurrency[COIN_KEY] : 0;
-                CurrentLightning = result.VirtualCurrency.ContainsKey(LIGHTNING_KEY) ? result.VirtualCurrency[LIGHTNING_KEY] : 0;
-
-                OnCoinChanged?.Invoke(CurrentCoin);
-                OnLightningChanged?.Invoke(CurrentLightning);
-
-                Debug.Log($"💰 Coin: {CurrentCoin}, ⚡ Lightning: {CurrentLightning}");
+                tcs.SetResult(result);
             },
-            error => Debug.LogError($"❌ LoadCurrencies Error: {error.GenerateErrorReport()}")
-        );
+            error =>
+            {
+                Debug.LogError($"❌ LoadCurrencies Error: {error.GenerateErrorReport()}");
+                tcs.SetException(new Exception(error.GenerateErrorReport()));
+            });
+
+        var inventoryResult = await tcs.Task;
+        
+        CurrentLightning = inventoryResult.VirtualCurrency.ContainsKey(LIGHTNING_KEY) ? inventoryResult.VirtualCurrency[LIGHTNING_KEY] : 0;
+        CurrentCoin = int.Parse(PlayFabManager.Instance.DataDictionary[PlayerDataKey.Coin.ToString()]);
+       
+        Debug.Log($"⚡ Lightning: {CurrentLightning}");
     }
+
     #endregion
 
     #region Public Methods
 
-    public void AddCoin(int amount)
+    public async void AddCoin(int amount)
     {
         if (amount <= 0)
         {
             Debug.LogWarning("⚠️ AddCoin amount <= 0 is invalid.");
             return;
         }
-
-        ModifyCurrency(COIN_KEY, amount, newBalance =>
-        {
-            CurrentCoin = newBalance;
-            OnCoinChanged?.Invoke(CurrentCoin);
-        });
+        CurrentCoin += amount;
+        await PlayFabManager.Instance.SaveSingleData(COIN_KEY, CurrentCoin.ToString());
+        
     }
 
-    public void AddLightning(int amount)
+    public async void AddLightning(int amount)
     {
         if (amount <= 0)
         {
             Debug.LogWarning("⚠️ AddLightning amount <= 0 is invalid.");
             return;
         }
-
-        ModifyCurrency(LIGHTNING_KEY, amount, newBalance =>
-        {
-            CurrentLightning = newBalance;
-            OnLightningChanged?.Invoke(CurrentLightning);
-        });
+        
+        
+        int newBalance =await ModifyCurrencyAsync(LIGHTNING_KEY, amount);
+        CurrentLightning = newBalance;
     }
 
-    public bool SpendLightning(int amount)
+    public async Task<bool> SpendLightning(int amount)
     {
         if (CurrentLightning < amount)
         {
             Debug.Log("⚡ Not enough Lightning");
             return false;
         }
-
-        ModifyCurrency(LIGHTNING_KEY, -amount, newBalance =>
-        {
-            CurrentLightning = newBalance;
-            OnLightningChanged?.Invoke(CurrentLightning);
-        });
-
+        
+        int newBalance =await ModifyCurrencyAsync(LIGHTNING_KEY, -amount);
+        CurrentLightning = newBalance;
         return true;
     }
 
+    public async Task<bool> SpendCoin(int amount)
+    {
+        if (CurrentCoin < amount)
+        {
+            Debug.Log("⚡ Not enough Coin");
+            return false;
+        }
+        CurrentCoin -= amount;
+        await PlayFabManager.Instance.SaveSingleData(COIN_KEY, CurrentCoin.ToString());
+        return true;
+    }
     #endregion
 
     #region Core Logic
 
-    private void ModifyCurrency(string currencyKey, int amount, Action<int> onSuccess)
+    public async Task<int> ModifyCurrencyAsync(string currencyKey, int amount)
     {
         if (amount == 0)
         {
             Debug.LogWarning("⚠️ ModifyCurrency called with 0 amount");
-            return;
+            return 0;
         }
+
+        var tcs = new TaskCompletionSource<int>();
 
         if (amount > 0)
         {
@@ -104,9 +140,12 @@ public class CurrencyManager : Singleton<CurrencyManager>
             };
 
             PlayFabClientAPI.AddUserVirtualCurrency(request,
-                result => onSuccess?.Invoke(result.Balance),
-                error => Debug.LogError($"❌ Add {currencyKey} Error: {error.GenerateErrorReport()}")
-            );
+                result => tcs.SetResult(result.Balance),
+                error =>
+                {
+                    Debug.LogError($"❌ Add {currencyKey} Error: {error.GenerateErrorReport()}");
+                    tcs.SetException(new Exception(error.GenerateErrorReport()));
+                });
         }
         else
         {
@@ -117,10 +156,15 @@ public class CurrencyManager : Singleton<CurrencyManager>
             };
 
             PlayFabClientAPI.SubtractUserVirtualCurrency(request,
-                result => onSuccess?.Invoke(result.Balance),
-                error => Debug.LogError($"❌ Subtract {currencyKey} Error: {error.GenerateErrorReport()}")
-            );
+                result => tcs.SetResult(result.Balance),
+                error =>
+                {
+                    Debug.LogError($"❌ Subtract {currencyKey} Error: {error.GenerateErrorReport()}");
+                    tcs.SetException(new Exception(error.GenerateErrorReport()));
+                });
         }
+
+        return await tcs.Task;
     }
 
     #endregion

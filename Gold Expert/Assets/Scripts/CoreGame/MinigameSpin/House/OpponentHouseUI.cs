@@ -1,38 +1,30 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-public class OpponentHouseUI : MonoBehaviour
+public class OpponentHouseUI : MonoBehaviour,IModalUI
 {
-	public static OpponentHouseUI Instance;
-
-	public CanvasGroup canvasGroup;
 	public OpponentHouseTarget[] targets;
 	public Text opponentNameText;
-
-	private void Awake()
-	{
-		Instance = this;
-		HideInstant();
-	}
+	
 
 	public void ShowHouse(OpponentHouseData data)
 	{
-		canvasGroup.alpha = 1;
-		canvasGroup.interactable = true;
-		canvasGroup.blocksRaycasts = true;
-
+		Show();
 		for (int i = 0; i < targets.Length; i++)
 		{
 			bool canBreak = data.breakableIndices == null || data.breakableIndices.Length == 0 || System.Array.Exists(data.breakableIndices, x => x == i);
-			targets[i].Setup(data.houseSprites[i], i);
+			targets[i].Setup(data.houseSprites[i], i, () =>
+			{
+				OnTargetSelected(i);
+			});
 			targets[i].button.interactable = canBreak;
 		}
-
+		
 		if (opponentNameText != null)
 			opponentNameText.text = $"Đang phá nhà của: {data.opponentName}";
 	}
 
-    public void OnTargetSelected(int index)
+    private void OnTargetSelected(int index)
     {
         foreach (var t in targets)
             t.Disable();
@@ -41,21 +33,24 @@ public class OpponentHouseUI : MonoBehaviour
         Debug.Log($"💥 Phá slot {index} → nhận 1000 coin");
 
         Hide();
-        SlotMachine2.Instance.BackToSpin();
+        SlotMachine.Instance.BackToSpin();
     }
 
 
+    public void Show()
+    {	Debug.Log("concac");
+	    this.gameObject.SetActive(true);
+    }
+
     public void Hide()
 	{
-		canvasGroup.alpha = 0;
-		canvasGroup.interactable = false;
-		canvasGroup.blocksRaycasts = false;
+		this.gameObject.SetActive(false);
 	}
 
-	public void HideInstant()
+	public bool IsVisible()
 	{
-		canvasGroup.alpha = 0;
-		canvasGroup.interactable = false;
-		canvasGroup.blocksRaycasts = false;
+		return this.gameObject.activeSelf;
 	}
+
+
 }

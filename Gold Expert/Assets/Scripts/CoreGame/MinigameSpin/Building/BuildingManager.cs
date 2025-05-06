@@ -1,97 +1,182 @@
-
-using Sirenix.OdinInspector;
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using Newtonsoft.Json;
 using UnityEngine;
+using Sirenix.OdinInspector;
+using UnityEngine.Serialization;
 
-public class BuildingManager : MonoBehaviour
+public class BuildingManager : Singleton<BuildingManager>,IModalUI
 {
-    public static BuildingManager Instance;
+   [Header("UI References")]
+    [SerializeField] private GameObject objBuildingUI;
 
-    public Dictionary<string, BuildingData> BuildingStates = new Dictionary<string, BuildingData>();
+    [Header("Map & Player Progress")]
+    public JsonMapDatabase mapDatabase;
+    private PlayerMapProgress playerProgress;
+
+    #region Initialization
+
+    private void Start()
+    {
+        mapDatabase = LoadMapConfig();
+
+        string json = PlayerPrefs.GetString("BuildingStates", "");
+        LoadProgress(json);
+        Debug.Log("✅ Load thành công: " + json);
+    }
+
+    private JsonMapDatabase LoadMapConfig()
+    {
+        TextAsset jsonAsset = Resources.Load<TextAsset>("Json/Map");
+        if (jsonAsset == null)
+        {
+            Debug.LogError("❌ Không tìm thấy file Map.json trong Resources/Json/");
+            return null;
+        }
+
+        return JsonUtility.FromJson<JsonMapDatabase>(jsonAsset.text);
+    }
+
+    #endregion
+
+    #region Building Logic
+
     [Button]
-    public void ResetBuildings()
+    public bool UpgradeBuilding(string buildingName)
     {
-        InitDefaultBuildings();
-        SaveBuildingStates();
+        var currentMap = GetCurrentMap();
+        var buildingCfg = currentMap.buildings.FirstOrDefault(b => b.name == buildingName);
+
+        if (buildingCfg == null)
+        {
+            Debug.LogError($"❌ Không tìm thấy cấu hình công trình {buildingName}");
+            return false;
+        }
+
+        if (!playerProgress.buildings.TryGetValue(buildingName, out var state))
+        {
+            Debug.LogError($"❌ Không tìm thấy trạng thái công trình {buildingName}");
+            return false;
+        }
+
+        if (state.needRepair)
+        {
+            Debug.LogWarning($"🔧 {buildingName} cần sửa chữa trước khi nâng cấp.");
+            return false;
+        }
+
+        if (state.level >= buildingCfg.maxLevel)
+        {
+            Debug.Log($"✅ {buildingName} đã đạt cấp tối đa.");
+            return false;
+        }
+
+        state.level++;
+        Debug.Log($"⬆️ Đã nâng {buildingName} lên cấp {state.level}");
+
+        if (IsCurrentMapCompleted())
+        {
+            Debug.Log("🎉 Đã hoàn thành map hiện tại, chuyển sang map kế tiếp.");
+            SwitchToNextMap();
+        }
+
+        SaveProgress();
+        return true;
     }
 
-    private void Awake()
+    private bool IsCurrentMapCompleted()
     {
-        if (Instance == null)
+        var currentMap = GetCurrentMap();
+
+        return currentMap.buildings.All(building =>
+            playerProgress.buildings.TryGetValue(building.name, out var state)
+            && state.level >= building.maxLevel
+        );
+    }
+
+    #endregion
+
+    #region Map Handling
+
+    private MapData GetCurrentMap()
+    {
+        return mapDatabase.maps.FirstOrDefault(m => m.mapId == playerProgress.currentMapId);
+    }
+
+    private void SwitchToNextMap()
+    {
+        int currentIndex = mapDatabase.maps.FindIndex(m => m.mapId == playerProgress.currentMapId);
+        if (currentIndex + 1 >= mapDatabase.maps.Count)
         {
-            Instance = this;
-            LoadBuildingStates();
+            Debug.Log("🏁 Không còn map nào tiếp theo.");
+            return;
+        }
+
+        var nextMap = mapDatabase.maps[currentIndex + 1];
+        playerProgress.currentMapId = nextMap.mapId;
+
+        // Reset trạng thái công trình
+        playerProgress.buildings.Clear();
+        foreach (var b in nextMap.buildings)
+        {
+            playerProgress.buildings[b.name] = new BuildingState { level = 0, needRepair = false };
+        }
+
+        Debug.Log($"🌍 Đã chuyển sang map: {nextMap.mapId}");
+    }
+
+    #endregion
+
+    #region Persistence
+
+    public void LoadProgress(string json)
+    {
+        if (!string.IsNullOrEmpty(json))
+        {
+            playerProgress = JsonConvert.DeserializeObject<PlayerMapProgress>(json);
         }
         else
         {
-            Destroy(gameObject);
+            Debug.LogWarning("⚠️ Không có dữ liệu BuildingStates trong PlayerPrefs.");
         }
     }
 
-    public void SaveBuildingStates()
+    [Button]
+    private void SaveProgress()
     {
-        string json = JsonUtility.ToJson(new SerializableBuildingStates(BuildingStates));
+        var json = JsonConvert.SerializeObject(playerProgress);
         PlayerPrefs.SetString("BuildingStates", json);
+        PlayerPrefs.Save();
+        Debug.Log($"💾 Đã lưu tiến trình: {json}");
+        // TODO: Gọi PlayFab API nếu cần đồng bộ lên cloud
+        PlayFabManager.Instance.SaveSingleData(PlayerDataKey.CurrentBuildingData.ToString(), json);
     }
 
-    public void LoadBuildingStates()
+    #endregion
+
+    #region UI Control
+
+    public void Show()
     {
-        if (PlayerPrefs.HasKey("BuildingStates"))
-        {
-            string json = PlayerPrefs.GetString("BuildingStates");
-            BuildingStates = JsonUtility.FromJson<SerializableBuildingStates>(json).ToDictionary();
-        }
-        else
-        {
-            InitDefaultBuildings();
-        }
+        objBuildingUI.SetActive(true);
     }
 
-    private void InitDefaultBuildings()
+    public void Hide()
     {
-        BuildingStates.Clear();
-
-        BuildingStates.Add("Tent", new BuildingData { BuildingId = "Tent", CurrentLevel = 0 });
-        BuildingStates.Add("Excavator", new BuildingData { BuildingId = "Excavator", CurrentLevel = 0 });
-        BuildingStates.Add("DinoHead", new BuildingData { BuildingId = "DinoHead", CurrentLevel = 0 });
-
-        SaveBuildingStates();
+        objBuildingUI.SetActive(false);
     }
 
-
-    public void UpgradeBuilding(string buildingId)
+    public bool IsVisible()
     {
-        if (BuildingStates.ContainsKey(buildingId))
-        {
-            var data = BuildingStates[buildingId];
-            if (data.CurrentLevel >= 5)
-            {
-                Debug.Log("Max level.");
-                return;
-            }
-
-            int cost = GetUpgradeCost(buildingId, data.CurrentLevel);
-            if (CoinManager.Instance.Coin >= cost)
-            {
-                CoinManager.Instance.SpendCoin(cost);
-                data.CurrentLevel++;
-                SaveBuildingStates();
-            }
-            else
-            {
-                Debug.Log("Not enough coin.");
-            }
-        }
+        return objBuildingUI.activeSelf;
     }
 
-    public int GetUpgradeCost(string buildingId, int currentLevel)
+    public void SwitchToSpinGame()
     {
-        int[] costTable = { 1000, 2000, 5000, 10000, 20000 };
-        return costTable[currentLevel];
+        Hide();
+        SlotMachine.Instance.Show();
     }
 
-    public int GetCurrentLevel(string buildingId)
-    {
-        return BuildingStates.ContainsKey(buildingId) ? BuildingStates[buildingId].CurrentLevel : 0;
-    }
+    #endregion
 }
