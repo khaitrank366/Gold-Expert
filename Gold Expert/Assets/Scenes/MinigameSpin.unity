@@ -2454,7 +2454,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   objBuildingUI: {fileID: 27188412}
-  mapDatabase: {fileID: 11400000, guid: 6ca9a1b6b2cda4b468d002e8dccbf804, type: 2}
+  mapDatabase:
+    maps: []
 --- !u!1 &982377148
 GameObject:
   m_ObjectHideFlags: 0
@@ -4186,6 +4187,7 @@ GameObject:
   - component: {fileID: 1421423050}
   - component: {fileID: 1421423051}
   - component: {fileID: 1421423052}
+  - component: {fileID: 1421423053}
   m_Layer: 0
   m_Name: PlayFabManager
   m_TagString: Untagged
@@ -4233,6 +4235,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f6f1744844c665b42ad445fe56ecbb2d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &1421423053
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1421423049}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 411224b69808a544dbcf4268b7164522, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  dataGameState: 0
 --- !u!1 &1468308941
 GameObject:
   m_ObjectHideFlags: 0

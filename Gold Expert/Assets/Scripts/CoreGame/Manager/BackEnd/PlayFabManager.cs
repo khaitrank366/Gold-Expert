@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using PlayFab;
@@ -21,7 +21,8 @@ public class PlayFabManager : Singleton<PlayFabManager>
         InitPlayerData();
         await Login();
         await GetAllPlayerData();
-        await CurrencyManager.Instance.LoadCurrencies();
+        await LoadingManager.Instance.LoadGameData();
+      
  
         return true;
         
@@ -90,7 +91,7 @@ public class PlayFabManager : Singleton<PlayFabManager>
        await rsPlayerData.Task;
     }
     
-    private async Task SaveAll()
+    public async Task SaveAll()
     {
         var tcs = new TaskCompletionSource<bool>();
         PlayFabClientAPI.UpdateUserData(new UpdateUserDataRequest

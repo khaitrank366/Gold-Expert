@@ -25,7 +25,8 @@ public static class Common
       private static readonly Dictionary<PlayerDataKey, string> KeyData = new()
       {
          { PlayerDataKey.LastOnline, "LastOnline" },
-         { PlayerDataKey.Coin, "Coin" }
+         { PlayerDataKey.Coin, "Coin" },
+         { PlayerDataKey.CurrentBuildingData, "CurrentBuildingData" }
       };
 
       public static string ToKey(PlayerDataKey key) => KeyData[key];

@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
 
-
-
-public class LoadingManager :Singleton<LoadingManager>
+public class LoadingManager : Singleton<LoadingManager>
 {
- #region ----Enums----
+	#region ----Enums----
 	private enum GameState
 	{
+		Init,
+		LoadCurrencyData,
 		LoadBuildingData,
 		Done
 	}
@@ -20,46 +20,44 @@ public class LoadingManager :Singleton<LoadingManager>
 	private GameState dataGameState;
 	private bool isDataLoading = false;
 	#endregion
-
-	protected  void Update()
+			
+	public async Task LoadGameData()
 	{
-		UpdateGameStates();
-		// Debug.Log("DataLoadManager Update:" + dataGameState);
-	}
-
-	async void UpdateGameStates()
-	{
-		if (!IsDone() || isDataLoading == true) return;
-
-		switch (dataGameState)
+		try
 		{
-			case GameState.LoadBuildingData:
-				//await LoadTemplateData();
-				BuildingManager.Instance.Load();				
-				break;
-		
-		
+			// Bắt đầu từ trạng thái Init
+			SetState(GameState.Init);
+			
+			//Load Currency Data
+			SetState(GameState.LoadCurrencyData);
+			await CurrencyManager.Instance.LoadCurrencies();
 
-			case GameState.Done:
-				break;
+			// Load Building Data
+			SetState(GameState.LoadBuildingData);
+			await BuildingManager.Instance.Load();
+
+			// Hoàn thành
+			SetState(GameState.Done);
+			Debug.Log("✅ Load game data completed");
 		}
-	}
-
-	protected  void Init()
-	{
-		//SetState(GameState.LoadTemplateData);
+		catch (System.Exception e)
+		{
+			Debug.LogError($"❌ Error loading game data: {e.Message}");
+		}
+		finally
+		{
+			isDataLoading = false;
+		}
 	}
 
 	private void SetState(GameState state)
 	{
 		dataGameState = state;
+		Debug.Log($"🔄 Loading State: {state}");
 	}
 
-	protected  bool IsDone()
+	public bool IsDone()
 	{
 		return dataGameState == GameState.Done;
 	}
-
-	
-   
 }
