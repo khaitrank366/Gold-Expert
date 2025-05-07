@@ -21,11 +21,18 @@ public class BuildingManager : Singleton<BuildingManager>,IModalUI
     {
         mapDatabase = LoadMapConfig();
 
-        string json = PlayerPrefs.GetString("BuildingStates", "");
-        LoadProgress(json);
-        Debug.Log("✅ Load thành công: " + json);
+     
     }
-
+    public void Load(){
+      //  string json = PlayerPrefs.GetString("BuildingStates", "");
+      if (PlayFabManager.Instance.DataDictionary.ContainsKey("CurrentBuildingData"))
+        {
+            string json =PlayFabManager.Instance.GetData("CurrentBuildingData");
+            LoadProgress(json);
+            Debug.Log("✅ Load thành công: " + json);
+        }
+     
+    }
     private JsonMapDatabase LoadMapConfig()
     {
         TextAsset jsonAsset = Resources.Load<TextAsset>("Json/Map");

@@ -10,9 +10,7 @@ public class LoadingManager :Singleton<LoadingManager>
  #region ----Enums----
 	private enum GameState
 	{
-		LoadTemplateData,
-		LoadingTemplateData,
-		LoadManagerData,
+		LoadBuildingData,
 		Done
 	}
 	#endregion
@@ -35,16 +33,11 @@ public class LoadingManager :Singleton<LoadingManager>
 
 		switch (dataGameState)
 		{
-			case GameState.LoadTemplateData:
+			case GameState.LoadBuildingData:
 				//await LoadTemplateData();
-				SetState(GameState.LoadingTemplateData);
+				BuildingManager.Instance.Load();				
 				break;
-			case GameState.LoadingTemplateData:
-				//if (CheckTemplateData())
-				{
-					SetState(GameState.LoadManagerData);
-				}
-				break;
+		
 		
 
 			case GameState.Done:
@@ -54,7 +47,7 @@ public class LoadingManager :Singleton<LoadingManager>
 
 	protected  void Init()
 	{
-		SetState(GameState.LoadTemplateData);
+		//SetState(GameState.LoadTemplateData);
 	}
 
 	private void SetState(GameState state)

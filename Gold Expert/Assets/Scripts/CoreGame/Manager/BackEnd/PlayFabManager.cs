@@ -161,7 +161,8 @@ public class PlayFabManager : Singleton<PlayFabManager>
         SaveAll();
     }
     
-
+public bool ContainsKey(string key) => DataDictionary.ContainsKey(key) && DataDictionary[key] != "";
+		public string GetData(string key) => DataDictionary.ContainsKey(key) ? DataDictionary[key] : "";
     #endregion
     #region DEBUG
 
