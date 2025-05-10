@@ -7,7 +7,7 @@ using Newtonsoft.Json;
 using Sirenix.OdinInspector;
 
 
-public class HandleAPI : MonoBehaviour
+public class HandleAPI : Singleton<HandleAPI>   
 {
     #region Base API HANDLE
     public static async Task<object> CallCloudScriptAsync(string functionName, object parameters = null)
@@ -123,6 +123,30 @@ public class HandleAPI : MonoBehaviour
         }
 
         return data;
+    }
+
+     [Button]
+    public async void AttackBuilding(int indexKeyBD,string targetId)
+    {
+      
+        try
+        {
+            var result = await CallCloudScriptAsync("AttackBuilding", new
+            {
+                targetId = targetId,
+                
+                buildingKey = indexKeyBD.ToString()
+            });
+
+            Debug.Log("✅ CloudScript Success: " + result.ToString());  
+          //  Debug.Log($"💰 Cướp {data.coinStolen} coin từ {data.victimId}");
+            //need update coin cache
+        
+        }
+        catch (PlayFabException ex)
+        {
+            Debug.LogError("❌ Gọi RobCoin thất bại: " + ex.Message);
+        }
     }
 
     #endregion
