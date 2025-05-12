@@ -3,17 +3,17 @@
     {
       "mapId": "Map1",
       "buildings": [
-        { "name": "Statue", "maxLevel": 3 },
-        { "name": "Castle", "maxLevel": 4 },
-        { "name": "Gate", "maxLevel": 2 }
+        { "name": "1", "maxLevel": 3 },
+        { "name": "2", "maxLevel": 4 },
+        { "name": "3", "maxLevel": 2 }
       ]
     },
     {
       "mapId": "Map2",
       "buildings": [
-        { "name": "Statue", "maxLevel": 5 },
-        { "name": "Castle", "maxLevel": 5 },
-        { "name": "Gate", "maxLevel": 5 }
+        { "name": "1", "maxLevel": 5 },
+        { "name": "2", "maxLevel": 5 },
+        { "name": "3", "maxLevel": 5 }
       ]
     }
   ]

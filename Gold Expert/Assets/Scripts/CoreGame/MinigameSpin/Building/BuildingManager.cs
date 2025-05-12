@@ -6,7 +6,6 @@ using Newtonsoft.Json;
 using UnityEngine;
 using Sirenix.OdinInspector;
 using UnityEngine.Serialization;
-using System.Collections;
 
 public class BuildingManager : Singleton<BuildingManager>, IModalUI
 {
@@ -21,73 +20,12 @@ public class BuildingManager : Singleton<BuildingManager>, IModalUI
     private PlayerMapProgress playerProgress;
     private const string MAP_JSON_PATH = "Json/Map";
     private const string BUILDING_STATES_KEY = "BuildingStates";
-    private const float AUTO_SAVE_INTERVAL = 5f; // 5 seconds
-    private Coroutine autoSaveCoroutine;
     #endregion
 
     #region Initialization
     private void Start()
     {
         InitializeMapDatabase();
-        StartAutoSave();
-    }
-
-    private void OnDestroy()
-    {
-        StopAutoSave();
-    }
-
-    private void StartAutoSave()
-    {
-        if (autoSaveCoroutine != null)
-        {
-            StopCoroutine(autoSaveCoroutine);
-        }
-        autoSaveCoroutine = StartCoroutine(AutoSaveRoutine());
-    }
-
-    private void StopAutoSave()
-    {
-        if (autoSaveCoroutine != null)
-        {
-            StopCoroutine(autoSaveCoroutine);
-            autoSaveCoroutine = null;
-        }
-    }
-
-    private IEnumerator AutoSaveRoutine()
-    {
-        while (true)
-        {
-            yield return new WaitForSeconds(AUTO_SAVE_INTERVAL);
-            AutoSave().ContinueWith(task => 
-            {
-                if (task.IsFaulted)
-                {
-                    Debug.LogError($"❌ Auto save failed: {task.Exception?.InnerException?.Message}");
-                }
-            });
-        }
-    }
-
-    private async Task AutoSave()
-    {
-        try
-        {
-            // Update LastOnline
-            PlayFabManager.Instance.DataDictionary[Common.PlayerDataKeyHelper.ToKey(PlayerDataKey.LastOnline)] = 
-                System.DateTime.UtcNow.ToString("o");
-
-            // Save current progress
-            var json = JsonConvert.SerializeObject(playerProgress);
-            await PlayFabManager.Instance.SaveSingleData(PlayerDataKey.CurrentBuildingData.ToString(), json);
-            Debug.Log($"💾 Auto saved at {DateTime.Now:HH:mm:ss}");
-        }
-        catch (Exception e)
-        {
-            Debug.LogError($"❌ Auto save failed: {e.Message}");
-            throw; // Re-throw để ContinueWith có thể bắt lỗi
-        }
     }
 
     private void InitializeMapDatabase()
@@ -119,13 +57,15 @@ public class BuildingManager : Singleton<BuildingManager>, IModalUI
 
     private async Task<bool> TryLoadExistingData()
     {
-        if (!PlayFabManager.Instance.DataDictionary.ContainsKey(PlayerDataKey.CurrentBuildingData.ToString()))
+        string data = PlayFabManager.Instance.DataDictionary[PlayerDataKey.CurrentBuildingData.ToString()];
+          
+        if (data == null || data == "null")
         {
             return false;
         }
 
         string json = PlayFabManager.Instance.GetData(PlayerDataKey.CurrentBuildingData.ToString());
-        if (string.IsNullOrEmpty(json))
+        if (string.IsNullOrEmpty(json) || json == "null")
         {
             return false;
         }
@@ -154,9 +94,9 @@ public class BuildingManager : Singleton<BuildingManager>, IModalUI
             currentMapId = "Map1",
             buildings = new Dictionary<string, BuildingState>
             {
-                ["Statue"] = new BuildingState { level = 1, needRepair = false },
-                ["Castle"] = new BuildingState { level = 1, needRepair = true },
-                ["Gate"] = new BuildingState { level = 1, needRepair = false }
+                ["1"] = new BuildingState { level = 1, needRepair = false },
+                ["2"] = new BuildingState { level = 1, needRepair = false },
+                ["3"] = new BuildingState { level = 1, needRepair = false }
             }
         };
     }
@@ -186,6 +126,32 @@ public class BuildingManager : Singleton<BuildingManager>, IModalUI
     #endregion
 
     #region Building Logic
+    public int GetCurrentLevel(string buildingName)
+    {
+        if (playerProgress?.buildings == null || !playerProgress.buildings.TryGetValue(buildingName, out var state))
+        {
+            return 0;
+        }
+        return state.level;
+    }
+
+    public int GetUpgradeCost(string buildingName, int currentLevel)
+    {
+        var currentMap = GetCurrentMap();
+        if (currentMap == null) return 0;
+
+        var buildingCfg = currentMap.buildings.FirstOrDefault(b => b.name == buildingName);
+        if (buildingCfg == null) return 0;
+
+        // Get building state to check if it needs repair
+        if (playerProgress.buildings.TryGetValue(buildingName, out var state) && state.needRepair)
+        {
+            return 2000; // Double cost for repair
+        }
+
+        return 1000; // Normal upgrade cost
+    }
+
     [Button]
     public bool UpgradeBuilding(string buildingName)
     {
@@ -196,8 +162,11 @@ public class BuildingManager : Singleton<BuildingManager>, IModalUI
 
         if (state.needRepair)
         {
-            Debug.LogWarning($"🔧 {buildingName} cần sửa chữa trước khi nâng cấp.");
-            return false;
+            // Handle repair
+            state.needRepair = false;
+            Debug.Log($"🔧 Đã sửa chữa {buildingName}");
+            SaveProgress();
+            return true;
         }
 
         if (state.level >= buildingCfg.maxLevel)
@@ -250,6 +219,15 @@ public class BuildingManager : Singleton<BuildingManager>, IModalUI
         }
 
         SaveProgress();
+    }
+
+    public BuildingState GetBuildingState(string buildingName)
+    {
+        if (playerProgress?.buildings == null || !playerProgress.buildings.TryGetValue(buildingName, out var state))
+        {
+            return null;
+        }
+        return state;
     }
     #endregion
 

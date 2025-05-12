@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using PlayFab;
@@ -58,8 +58,7 @@ public class PlayFabManager : Singleton<PlayFabManager>
     {
         DataDictionary = new Dictionary<string, string>();
         DataDictionary.Add(Common.PlayerDataKeyHelper.ToKey(PlayerDataKey.LastOnline),"");
-        DataDictionary.Add(Common.PlayerDataKeyHelper.ToKey(PlayerDataKey.Coin),"0");
-        DataDictionary.Add(Common.PlayerDataKeyHelper.ToKey(PlayerDataKey.CurrentBuildingData),"0");
+        DataDictionary.Add(Common.PlayerDataKeyHelper.ToKey(PlayerDataKey.CurrentBuildingData),"");
     }
     
     #region Load & Save All Data
@@ -132,7 +131,7 @@ public class PlayFabManager : Singleton<PlayFabManager>
             },
             result =>
             {
-                Debug.Log($"✅ Dữ liệu {key} đã được lưu thành công.");
+               // Debug.Log($"✅ Dữ liệu {key} đã được lưu thành công.");
                 tcs.SetResult(true);
             },
             error =>

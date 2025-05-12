@@ -1,56 +1,73 @@
 using UnityEngine;
 using UnityEngine.UI;
+using System.Collections.Generic;
+using TMPro;
+using System.Linq;
+using Newtonsoft.Json;
 
-public class OpponentHouseUI : MonoBehaviour,IModalUI
+public class OpponentHouseUI : MonoBehaviour, IModalUI
 {
-	public OpponentHouseTarget[] targets;
-	public Text opponentNameText;
+	[SerializeField] private List<ElementOpponentConstruction> elementConstructions = new List<ElementOpponentConstruction>();
+	public TextMeshProUGUI opponentNameText;
 	
 
-	public void ShowHouse(OpponentHouseData data)
+	public void ShowHouse(PlayerDataResponse userData)
 	{
-		Show();
-		for (int i = 0; i < targets.Length; i++)
+		if (userData?.playerData == null || !userData.playerData.ContainsKey("CurrentBuildingData"))
 		{
-			bool canBreak = data.breakableIndices == null || data.breakableIndices.Length == 0 || System.Array.Exists(data.breakableIndices, x => x == i);
-			targets[i].Setup(data.houseSprites[i], i, () =>
-			{
-				OnTargetSelected(i);
-			});
-			targets[i].button.interactable = canBreak;
+			Debug.LogError("Invalid player data received");
+			return;
 		}
-		
-		if (opponentNameText != null)
-			opponentNameText.text = $"Đang phá nhà của: {data.opponentName}";
+
+		Show();
+		try
+		{
+			var buildingData = userData.playerData["CurrentBuildingData"].Value.ToString();
+			var dataHouse = JsonConvert.DeserializeObject<PlayerMapProgress>(buildingData);
+			
+			if (dataHouse?.buildings == null)
+			{
+				Debug.LogError("Invalid building data");
+				return;
+			}
+
+			var buildings = dataHouse.buildings.ToList();
+			for (int i = 0; i < buildings.Count && i < elementConstructions.Count; i++)
+			{
+				var building = buildings[i];
+				var element = elementConstructions[i];
+				
+				element.Setup(building.Key, building.Value, () => OnTargetSelected(i, userData.selectedPlayFabId));
+			}
+		}
+		catch (System.Exception e)
+		{
+			Debug.LogError($"Error processing building data: {e.Message}");
+		}
 	}
 
-    private void OnTargetSelected(int index)
-    {
-        foreach (var t in targets)
-            t.Disable();
-
-        CurrencyManager.Instance.AddCoin(1000);
-        Debug.Log($"💥 Phá slot {index} → nhận 1000 coin");
-
-        Hide();
-        SlotMachine.Instance.BackToSpin();
-    }
-
-
-    public void Show()
-    {	Debug.Log("concac");
-	    this.gameObject.SetActive(true);
-    }
-
-    public void Hide()
+	private void OnTargetSelected(int index, string targetId)
 	{
-		this.gameObject.SetActive(false);
+		if (string.IsNullOrEmpty(targetId))
+		{
+			Debug.LogError("Invalid target ID");
+			return;
+		}
+
+		HandleAPI.Instance.AttackBuilding(index, targetId);
+		CurrencyManager.Instance.AddCoin(1000);
+		Debug.Log($"💥 Attacked building {index} → received 1000 coins");
+
+		Hide();
+		SlotMachine.Instance.BackToSpin();
 	}
 
-	public bool IsVisible()
-	{
-		return this.gameObject.activeSelf;
-	}
+
+	public void Show() => gameObject.SetActive(true);
+
+	public void Hide() => gameObject.SetActive(false);
+
+	public bool IsVisible() => gameObject.activeSelf;
 
 
 }

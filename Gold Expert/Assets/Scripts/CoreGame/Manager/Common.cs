@@ -4,13 +4,13 @@ using System.Collections.Generic;
 #region Enum
 public enum PlayerDataKey
 {
-   Coin,
    LastOnline,
    CurrentBuildingData
 }
 #endregion
 public static class Common 
 {
+   
  
    #region Funct Support
 
@@ -25,7 +25,6 @@ public static class Common
       private static readonly Dictionary<PlayerDataKey, string> KeyData = new()
       {
          { PlayerDataKey.LastOnline, "LastOnline" },
-         { PlayerDataKey.Coin, "Coin" },
          { PlayerDataKey.CurrentBuildingData, "CurrentBuildingData" }
       };
 

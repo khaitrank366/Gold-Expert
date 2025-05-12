@@ -1,4 +1,4 @@
-    using System;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using PlayFab;
@@ -9,6 +9,7 @@ public class CurrencyManager : Singleton<CurrencyManager>
 {
     public event Action<int> OnCoinChanged;
     public event Action<int> OnLightningChanged;
+    public event Action<int> OnShieldChanged;
 
     private int _currentCoin;
     public int CurrentCoin
@@ -36,9 +37,23 @@ public class CurrencyManager : Singleton<CurrencyManager>
             }
         }
     }
+    private int _currentShield;
+    public int CurrentShield
+    {
+        get => _currentShield;
+         set
+        {
+            if (_currentShield != value)
+            {
+                _currentShield = value;
+                OnShieldChanged?.Invoke(_currentShield);
+            }
+        }
+    }
     
-    private  string COIN_KEY=PlayerDataKey.Coin.ToString();
-    private  string LIGHTNING_KEY = "LI";
+    private const string COIN_KEY = "CO";
+    private const string LIGHTNING_KEY = "LI";
+    private const string SHIELD_KEY = "SH";
     
     #region Load
     public async Task LoadCurrencies()
@@ -59,9 +74,12 @@ public class CurrencyManager : Singleton<CurrencyManager>
         var inventoryResult = await tcs.Task;
         
         CurrentLightning = inventoryResult.VirtualCurrency.ContainsKey(LIGHTNING_KEY) ? inventoryResult.VirtualCurrency[LIGHTNING_KEY] : 0;
-        CurrentCoin = int.Parse(PlayFabManager.Instance.DataDictionary[PlayerDataKey.Coin.ToString()]);
+        CurrentShield = inventoryResult.VirtualCurrency.ContainsKey(SHIELD_KEY) ? inventoryResult.VirtualCurrency[SHIELD_KEY] : 0;
+        CurrentCoin = inventoryResult.VirtualCurrency.ContainsKey(COIN_KEY) ? inventoryResult.VirtualCurrency[COIN_KEY] : 0;
        
+        Debug.Log($"💰 Coin: {CurrentCoin}");
         Debug.Log($"⚡ Lightning: {CurrentLightning}");
+        Debug.Log($"🛡️ Shield: {CurrentShield}");
     }
 
     #endregion
@@ -75,9 +93,9 @@ public class CurrencyManager : Singleton<CurrencyManager>
             Debug.LogWarning("⚠️ AddCoin amount <= 0 is invalid.");
             return;
         }
-        CurrentCoin += amount;
-        await PlayFabManager.Instance.SaveSingleData(COIN_KEY, CurrentCoin.ToString());
         
+        int newBalance = await ModifyCurrencyAsync(COIN_KEY, amount);
+        CurrentCoin = newBalance;
     }
 
     public async void AddLightning(int amount)
@@ -88,9 +106,20 @@ public class CurrencyManager : Singleton<CurrencyManager>
             return;
         }
         
-        
-        int newBalance =await ModifyCurrencyAsync(LIGHTNING_KEY, amount);
+        int newBalance = await ModifyCurrencyAsync(LIGHTNING_KEY, amount);
         CurrentLightning = newBalance;
+    }
+
+    public async void AddShield(int amount)
+    {
+        if (amount <= 0)
+        {
+            Debug.LogWarning("⚠️ AddShield amount <= 0 is invalid.");
+            return;
+        }
+        
+        int newBalance = await ModifyCurrencyAsync(SHIELD_KEY, amount);
+        CurrentShield = newBalance;
     }
 
     public async Task<bool> SpendLightning(int amount)
@@ -101,8 +130,21 @@ public class CurrencyManager : Singleton<CurrencyManager>
             return false;
         }
         
-        int newBalance =await ModifyCurrencyAsync(LIGHTNING_KEY, -amount);
+        int newBalance = await ModifyCurrencyAsync(LIGHTNING_KEY, -amount);
         CurrentLightning = newBalance;
+        return true;
+    }
+
+    public async Task<bool> SpendShield(int amount)
+    {
+        if (CurrentShield < amount)
+        {
+            Debug.Log("🛡️ Not enough Shield");
+            return false;
+        }
+        
+        int newBalance = await ModifyCurrencyAsync(SHIELD_KEY, -amount);
+        CurrentShield = newBalance;
         return true;
     }
 
@@ -110,11 +152,12 @@ public class CurrencyManager : Singleton<CurrencyManager>
     {
         if (CurrentCoin < amount)
         {
-            Debug.Log("⚡ Not enough Coin");
+            Debug.Log("💰 Not enough Coin");
             return false;
         }
-        CurrentCoin -= amount;
-        await PlayFabManager.Instance.SaveSingleData(COIN_KEY, CurrentCoin.ToString());
+        
+        int newBalance = await ModifyCurrencyAsync(COIN_KEY, -amount);
+        CurrentCoin = newBalance;
         return true;
     }
     #endregion

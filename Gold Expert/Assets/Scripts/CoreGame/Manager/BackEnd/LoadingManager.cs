@@ -20,7 +20,7 @@ public class LoadingManager : Singleton<LoadingManager>
 	private GameState dataGameState;
 	private bool isDataLoading = false;
 	#endregion
-			
+	
 	public async Task LoadGameData()
 	{
 		try
@@ -28,7 +28,7 @@ public class LoadingManager : Singleton<LoadingManager>
 			// Bắt đầu từ trạng thái Init
 			SetState(GameState.Init);
 			
-			//Load Currency Data
+			//Load Currency Dataautosave
 			SetState(GameState.LoadCurrencyData);
 			await CurrencyManager.Instance.LoadCurrencies();
 

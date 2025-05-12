@@ -63,7 +63,7 @@ public class SlotMachine : Singleton<SlotMachine>,IModalUI
         {
             reel.symbolPrefab = symbolPrefab;
             reel.symbolSprites = symbolSprites;
-            reel.forcedWinSpriteIndex = null;
+            reel.ForcedWinSpriteIndex = null;
 
             reel.Init();
             reel.SetSpeed(0f);
@@ -86,15 +86,15 @@ public class SlotMachine : Singleton<SlotMachine>,IModalUI
         // Tạm thời ép kết quả
         serverResult = new List<symbolItem>
         {
-            symbolItem.hammer,
-            symbolItem.hammer,
-            symbolItem.hammer
+            symbolItem.item1,
+            symbolItem.item1,
+            symbolItem.item1
         };
 
         for (int i = 0; i < reels.Length; i++)
         {
             int spriteIndex = (int)serverResult[i];
-            reels[i].forcedWinSpriteIndex = spriteIndex;
+            reels[i].ForcedWinSpriteIndex = spriteIndex;
 
             foreach (Transform child in reels[i].transform)
                 child.DOKill();
@@ -103,23 +103,14 @@ public class SlotMachine : Singleton<SlotMachine>,IModalUI
             reels[i].SetSpeed(spinSpeed);
         }
 
-        Invoke(nameof(StopSpin), 1f);
+        Invoke(nameof(StopSpin), 0.8f);
     }
-
     void StopSpin()
     {
-        float baseDelay = 0.8f;
-        float spacing = 0.5f;
-        float extraDelayLast = 0.5f;
-
+        float delay = 0.5f;
         for (int i = 0; i < reels.Length; i++)
         {
-            float delay = baseDelay + i * spacing;
-
-            if (i == reels.Length - 1)
-                delay += extraDelayLast;
-
-            SlowDown(reels[i], delay);
+            SlowDown(reels[i], i * delay);
         }
     }
 
@@ -128,7 +119,7 @@ public class SlotMachine : Singleton<SlotMachine>,IModalUI
         DOVirtual.DelayedCall(delay, () =>
         {
             reel.SetSpeed(0f);
-            reel.StopWithTween(1f);
+            reel.StopWithTween(0.8f);
 
             stoppedCount++;
             if (stoppedCount == reels.Length)
@@ -211,14 +202,23 @@ public class SlotMachine : Singleton<SlotMachine>,IModalUI
 
     #region Show/Hide Modal
 
-    void OpenOpponentHouse()
+    async void OpenOpponentHouse()
     {
         isInOpponentHouse = true;
 
         Hide();
-
-        var data = MockOpponentHouseService.GetRandomHouse(symbolSprites);
-       GameUI.Instance.OpponentHouseUI.ShowHouse(data);
+        PlayerDataResponse rs_UserData= await HandleAPI.Instance.GetRandomUserAsync();
+        // var data =  new PlayerMapProgress
+        // {
+        //     currentMapId = "Map1",
+        //     buildings = new Dictionary<string, BuildingState>
+        //     {
+        //         ["Statue"] = new BuildingState { level = 1, needRepair = false },
+        //         ["Castle"] = new BuildingState { level = 1, needRepair = true },
+        //         ["Gate"] = new BuildingState { level = 1, needRepair = false }
+        //     }
+        // };
+       GameUI.Instance.OpponentHouseUI.ShowHouse(rs_UserData);
     }
 
     public void BackToSpin()

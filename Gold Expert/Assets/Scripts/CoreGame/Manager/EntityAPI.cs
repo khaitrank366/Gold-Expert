@@ -53,6 +53,7 @@ using UnityEngine;
     {
         public string name; // "Statue", "Castle", "Gate"
         public int maxLevel;
+        public int baseCost = 100; // Base cost for upgrades
     }
 
     [System.Serializable]
