@@ -4,13 +4,14 @@ using DG.Tweening;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.VisualScripting;
+using System.Threading.Tasks;
 
 public enum symbolItem
 {
-    item1,
-    item2,
-    item3,
-    hammer
+    BigCoin,
+    Shield,
+    Lightning,
+    Hammer
 }
 
 public class SlotMachine : Singleton<SlotMachine>,IModalUI
@@ -21,6 +22,7 @@ public class SlotMachine : Singleton<SlotMachine>,IModalUI
     public GameObject symbolPrefab;
     public Sprite[] symbolSprites;
     public Button spinButton;
+    
     public float spinSpeed = 2500f;
     public float stopDelay = 0.6f;
     private bool isSpinning = false;
@@ -30,7 +32,9 @@ public class SlotMachine : Singleton<SlotMachine>,IModalUI
     private int stoppedCount = 0;
     private List<symbolItem> serverResult;
     private Dictionary<symbolItem, Sprite> itemToSprite;
-
+    #region Debug
+        [SerializeField] private symbolItem debugSymbol;
+    #endregion
 
 
     void Start()
@@ -50,10 +54,10 @@ public class SlotMachine : Singleton<SlotMachine>,IModalUI
 
         itemToSprite = new Dictionary<symbolItem, Sprite>
         {
-            { symbolItem.item1, symbolSprites[0] },
-            { symbolItem.item2, symbolSprites[1] },
-            { symbolItem.item3, symbolSprites[2] },
-            { symbolItem.hammer, symbolSprites[3] }
+            { symbolItem.BigCoin, symbolSprites[0] },
+            { symbolItem.Shield, symbolSprites[1] },
+            { symbolItem.Lightning, symbolSprites[2] },
+            { symbolItem.Hammer, symbolSprites[3] }
         };
     }
 
@@ -86,9 +90,9 @@ public class SlotMachine : Singleton<SlotMachine>,IModalUI
         // Tạm thời ép kết quả
         serverResult = new List<symbolItem>
         {
-            symbolItem.item1,
-            symbolItem.item1,
-            symbolItem.item1
+            debugSymbol,
+            debugSymbol,
+            debugSymbol
         };
 
         for (int i = 0; i < reels.Length; i++)
@@ -143,7 +147,7 @@ public class SlotMachine : Singleton<SlotMachine>,IModalUI
         });
     }
 
-    void CheckResult()
+    async Task CheckResult()
     {
         var results = new List<symbolItem>();
 
@@ -165,20 +169,20 @@ public class SlotMachine : Singleton<SlotMachine>,IModalUI
 
             switch (results[0])
             {
-                case symbolItem.item1:
+                case symbolItem.BigCoin:
                     CurrencyManager.Instance.AddCoin(2000);
                     AutoSpinIfNeeded();
                     break;
 
-                case symbolItem.item2:
-                    CurrencyManager.Instance.AddCoin(1000);
+                case symbolItem.Shield: //khien
+                    int rs=await CurrencyManager.Instance.AddShield(1);
                     AutoSpinIfNeeded();
                     break;
-                case symbolItem.item3:
+                case symbolItem.Lightning:
                     CurrencyManager.Instance.AddLightning(1);
                     AutoSpinIfNeeded();
                     break;
-                case symbolItem.hammer:
+                case symbolItem.Hammer:
                     Debug.Log("🛠 Búa xuất hiện → chuyển qua phá nhà đối phương");
                     OpenOpponentHouse();
                     break;
@@ -208,6 +212,7 @@ public class SlotMachine : Singleton<SlotMachine>,IModalUI
 
         Hide();
         PlayerDataResponse rs_UserData= await HandleAPI.Instance.GetRandomUserAsync();
+       
         // var data =  new PlayerMapProgress
         // {
         //     currentMapId = "Map1",

@@ -109,17 +109,33 @@ public class CurrencyManager : Singleton<CurrencyManager>
         int newBalance = await ModifyCurrencyAsync(LIGHTNING_KEY, amount);
         CurrentLightning = newBalance;
     }
-
-    public async void AddShield(int amount)
+/// <summary>
+/// return 1 if success, 0 if already at max, -1 if failed
+/// </summary>
+/// <param name="amount"></param>
+/// <returns></returns>
+    public async Task<int> AddShield(int amount)
     {
         if (amount <= 0)
         {
             Debug.LogWarning("⚠️ AddShield amount <= 0 is invalid.");
-            return;
+            return -1;
+        }
+
+        // Check if adding the amount would exceed the maximum limit of 3
+        if (CurrentShield + amount > 3)
+        {
+            amount = 3 - CurrentShield; // Adjust amount to reach exactly 3
+            if (amount <= 0)
+            {
+                Debug.Log("🛡️ Shield is already at maximum (3)");
+                return 0;
+            }
         }
         
         int newBalance = await ModifyCurrencyAsync(SHIELD_KEY, amount);
         CurrentShield = newBalance;
+        return 1;
     }
 
     public async Task<bool> SpendLightning(int amount)

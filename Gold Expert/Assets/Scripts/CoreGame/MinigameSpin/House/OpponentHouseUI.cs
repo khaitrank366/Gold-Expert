@@ -11,9 +11,10 @@ public class OpponentHouseUI : MonoBehaviour, IModalUI
 	public TextMeshProUGUI opponentNameText;
 	
 
-	public void ShowHouse(PlayerDataResponse userData)
+	public void ShowHouse(PlayerDataResponse userHouseData)
 	{
-		if (userData?.playerData == null || !userData.playerData.ContainsKey("CurrentBuildingData"))
+		Debug.Log("check data"+userHouseData.CrrentBuildingData.currentMapId.ToString());
+		if (userHouseData?.CrrentBuildingData?.buildings == null)
 		{
 			Debug.LogError("Invalid player data received");
 			return;
@@ -22,22 +23,14 @@ public class OpponentHouseUI : MonoBehaviour, IModalUI
 		Show();
 		try
 		{
-			var buildingData = userData.playerData["CurrentBuildingData"].Value.ToString();
-			var dataHouse = JsonConvert.DeserializeObject<PlayerMapProgress>(buildingData);
-			
-			if (dataHouse?.buildings == null)
-			{
-				Debug.LogError("Invalid building data");
-				return;
-			}
-
-			var buildings = dataHouse.buildings.ToList();
+			var buildings = userHouseData.CrrentBuildingData.buildings.ToList();
+	
 			for (int i = 0; i < buildings.Count && i < elementConstructions.Count; i++)
 			{
 				var building = buildings[i];
 				var element = elementConstructions[i];
 				
-				element.Setup(building.Key, building.Value, () => OnTargetSelected(i, userData.selectedPlayFabId));
+				element.Setup(building.Key, building.Value, () => OnTargetSelected(building.Key, userHouseData.selectedPlayFabId));
 			}
 		}
 		catch (System.Exception e)
@@ -46,7 +39,7 @@ public class OpponentHouseUI : MonoBehaviour, IModalUI
 		}
 	}
 
-	private void OnTargetSelected(int index, string targetId)
+	private void OnTargetSelected(string idConstruction, string targetId)
 	{
 		if (string.IsNullOrEmpty(targetId))
 		{
@@ -54,9 +47,9 @@ public class OpponentHouseUI : MonoBehaviour, IModalUI
 			return;
 		}
 
-		HandleAPI.Instance.AttackBuilding(index, targetId);
+		HandleAPI.Instance.AttackBuilding(idConstruction, targetId);
 		CurrencyManager.Instance.AddCoin(1000);
-		Debug.Log($"💥 Attacked building {index} → received 1000 coins");
+		Debug.Log($"💥 Attacked building {idConstruction} → received 1000 coins");
 
 		Hide();
 		SlotMachine.Instance.BackToSpin();

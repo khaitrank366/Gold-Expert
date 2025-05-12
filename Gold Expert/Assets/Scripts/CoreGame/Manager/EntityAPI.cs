@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+using Newtonsoft.Json;
 
     [System.Serializable]
     public  class RobCoinResult
@@ -16,8 +16,28 @@ using UnityEngine;
     {
         public string selectedPlayFabId;
         public string displayName;
-        public Dictionary<string, PlayerDataEntry> playerData;
+        public Dictionary<string, PlayerDataEntry> playerData;  // Changed to use PlayerDataEntry
         public Dictionary<string, int> virtualCurrency;
+        
+        // Helper properties to get the parsed data
+        public string LastOnline => playerData != null && playerData.ContainsKey("LastOnline") ? playerData["LastOnline"].Value : null;
+        
+        public PlayerMapProgress CrrentBuildingData
+        {
+            get
+            {
+              
+                if (playerData != null && playerData.ContainsKey("CurrentBuildingData"))
+                {
+                    // Use JsonConvert from Newtonsoft.Json instead of JsonUtility since the data contains a Dictionary
+                    var buildingData = JsonConvert.DeserializeObject<PlayerMapProgress>(playerData["CurrentBuildingData"].Value);
+                   
+                    return buildingData;
+                }
+                return null;
+            }
+        }
+       
     }
 
     [System.Serializable]
@@ -28,6 +48,7 @@ using UnityEngine;
         public string Permission;
     }
 
+ 
     [System.Serializable]
     public class PlayerMapProgress
     {
@@ -61,3 +82,9 @@ using UnityEngine;
     {
         public List<MapData> maps;
     }
+    public class AttackBuildingResponse
+{
+    public bool result;
+    public string message;
+    public bool shieldUsed;
+}

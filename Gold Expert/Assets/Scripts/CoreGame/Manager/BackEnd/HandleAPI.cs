@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 using Sirenix.OdinInspector;
 
 
+
 public class HandleAPI : Singleton<HandleAPI>   
 {
     #region Base API HANDLE
@@ -125,27 +126,30 @@ public class HandleAPI : Singleton<HandleAPI>
         return data;
     }
 
-     [Button]
-    public async void AttackBuilding(int indexKeyBD,string targetId)
+    [Button]
+    public async Task<AttackBuildingResponse> AttackBuilding(string indexKeyBD, string targetId)
     {
-      
         try
         {
             var result = await CallCloudScriptAsync("AttackBuilding", new
             {
                 targetId = targetId,
-                
-                buildingKey = indexKeyBD.ToString()
+                buildingKey = indexKeyBD
             });
 
+            var response = JsonConvert.DeserializeObject<AttackBuildingResponse>(result.ToString());
             Debug.Log("✅ CloudScript Success: " + result.ToString());  
-          //  Debug.Log($"💰 Cướp {data.coinStolen} coin từ {data.victimId}");
-            //need update coin cache
-        
+            return response;
         }
         catch (PlayFabException ex)
         {
-            Debug.LogError("❌ Gọi RobCoin thất bại: " + ex.Message);
+            Debug.LogError("❌ Attack Building Failed: " + ex.Message);
+            return new AttackBuildingResponse 
+            { 
+                result = false, 
+                message = ex.Message, 
+                shieldUsed = false 
+            };
         }
     }
 
