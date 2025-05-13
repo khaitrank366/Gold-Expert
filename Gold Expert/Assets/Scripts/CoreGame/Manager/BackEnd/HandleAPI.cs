@@ -112,7 +112,7 @@ public class HandleAPI : Singleton<HandleAPI>
                 victimId = "6409D2F127B7DCE2",
                 stealPercent = 0.2f
             });
-
+Debug.Log(PlayFabManager.Instance.PlayfabId);
              data = JsonUtility.FromJson<RobCoinResult>(result.ToString());
           //  Debug.Log($"💰 Cướp {data.coinStolen} coin từ {data.victimId}");
             //need update coin cache
@@ -133,6 +133,7 @@ public class HandleAPI : Singleton<HandleAPI>
         {
             var result = await CallCloudScriptAsync("AttackBuilding", new
             {
+                currentPlayerId = PlayFabManager.Instance.PlayfabId,
                 targetId = targetId,
                 buildingKey = indexKeyBD
             });
@@ -151,6 +152,26 @@ public class HandleAPI : Singleton<HandleAPI>
                 shieldUsed = false 
             };
         }
+    }
+    [Button]
+    public async void LogSystem()
+    {
+        var result = await CallCloudScriptAsync("LogSystem", new
+        {
+            currentPlayerId = PlayFabManager.Instance.PlayfabId,
+            type = "rob",
+            detail = "test"
+        });
+        Debug.Log("✅ CloudScript Success: " + result.ToString());  
+    }
+    [Button]
+    public async void GetLogSystem()
+    {
+        var result = await CallCloudScriptAsync("LogSystem", new
+        {
+            currentPlayerId = PlayFabManager.Instance.PlayfabId 
+        });
+        Debug.Log("✅ CloudScript Success: " + result.ToString());  
     }
 
     #endregion
