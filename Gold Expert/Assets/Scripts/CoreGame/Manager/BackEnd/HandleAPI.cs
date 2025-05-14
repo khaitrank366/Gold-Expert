@@ -173,6 +173,12 @@ Debug.Log(PlayFabManager.Instance.PlayfabId);
         });
         Debug.Log("✅ CloudScript Success: " + result.ToString());  
     }
+ [Button]
+    public async void GetRandomSymbol()
+    {
+        var result = await CallCloudScriptAsync("GetRandomSymbol");
+        Debug.Log("✅ CloudScript Success: " + result.ToString());  
+    }
 
     #endregion
  
