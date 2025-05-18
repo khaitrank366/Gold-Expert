@@ -4565,6 +4565,50 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2798f1ac3a7539044881d0ff74b10bd0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!1 &1430342534
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1430342536}
+  - component: {fileID: 1430342535}
+  m_Layer: 0
+  m_Name: PlayFabHttp
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1430342535
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1430342534}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 97a8a3caac8b73541aa8a9a1e330f479, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!4 &1430342536
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1430342534}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1504451543
 GameObject:
   m_ObjectHideFlags: 0
@@ -5037,7 +5081,7 @@ Camera:
     height: 1
   near clip plane: 0.19
   far clip plane: 999.77
-  field of view: 33.1
+  field of view: 42.3
   orthographic: 1
   orthographic size: 5.62
   m_Depth: -1
@@ -5063,13 +5107,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1669907398}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1, z: -10}
+  m_LocalRotation: {x: 0.18852921, y: -0, z: -0, w: 0.9820676}
+  m_LocalPosition: {x: 0, y: 2.29, z: -8.9}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 21.734, y: 0, z: 0}
 --- !u!114 &1669907402
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5877,3 +5921,4 @@ SceneRoots:
   - {fileID: 842426744}
   - {fileID: 234285376}
   - {fileID: 1740762313}
+  - {fileID: 1430342536}

@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Unity.VisualScripting;
 using System.Threading.Tasks;
-
+using Newtonsoft.Json;
 public enum symbolItem
 {
     BigCoin,
@@ -14,7 +14,7 @@ public enum symbolItem
     Hammer
 }
 
-public class SlotMachine : Singleton<SlotMachine>,IModalUI
+public class SlotMachine : Singleton<SlotMachine>, IModalUI
 {
     [SerializeField] private CanvasGroup slotCanvasGroup;
     public Toggle autoSpinToggle;
@@ -22,7 +22,7 @@ public class SlotMachine : Singleton<SlotMachine>,IModalUI
     public GameObject symbolPrefab;
     public Sprite[] symbolSprites;
     public Button spinButton;
-    
+
     public float spinSpeed = 2500f;
     public float stopDelay = 0.6f;
     private bool isSpinning = false;
@@ -33,7 +33,7 @@ public class SlotMachine : Singleton<SlotMachine>,IModalUI
     private List<symbolItem> serverResult;
     private Dictionary<symbolItem, Sprite> itemToSprite;
     #region Debug
-        [SerializeField] private symbolItem debugSymbol;
+    [SerializeField] private symbolItem debugSymbol;
     #endregion
 
 
@@ -74,7 +74,7 @@ public class SlotMachine : Singleton<SlotMachine>,IModalUI
         }
     }
 
-    public async  void StartSpin()
+    public async void StartSpin()
     {
         if (!canPressSpin || isSpinning || isInOpponentHouse) return;
         if (!await CurrencyManager.Instance.SpendLightning(1))
@@ -88,12 +88,25 @@ public class SlotMachine : Singleton<SlotMachine>,IModalUI
         stoppedCount = 0;
 
         // Tạm thời ép kết quả
-        serverResult = new List<symbolItem>
-        {
-            debugSymbol,
-            debugSymbol,
-            debugSymbol
-        };
+        // serverResult = new List<symbolItem>
+        // {
+        //     debugSymbol,
+        //     debugSymbol,
+        //     debugSymbol
+        // };
+        var response = await HandleAPI.Instance.GetRandomSymbol();
+        if(!response.success) {
+            Debug.LogError("Lỗi khi lấy Symbol từ server");
+            return;
+        }
+        symbolItem rsSymbol = (symbolItem)System.Enum.Parse(typeof(symbolItem), response.symbol);
+        Debug.Log($"Received symbol from server: {rsSymbol}");
+        serverResult = new List<symbolItem>{
+                rsSymbol,
+                rsSymbol,
+                rsSymbol
+            };
+
 
         for (int i = 0; i < reels.Length; i++)
         {
@@ -175,7 +188,7 @@ public class SlotMachine : Singleton<SlotMachine>,IModalUI
                     break;
 
                 case symbolItem.Shield: //khien
-                    int rs=await CurrencyManager.Instance.AddShield(1);
+                    int rs = await CurrencyManager.Instance.AddShield(1);
                     AutoSpinIfNeeded();
                     break;
                 case symbolItem.Lightning:
@@ -211,8 +224,8 @@ public class SlotMachine : Singleton<SlotMachine>,IModalUI
         isInOpponentHouse = true;
 
         Hide();
-        PlayerDataResponse rs_UserData= await HandleAPI.Instance.GetRandomUserAsync();
-       
+        PlayerDataResponse rs_UserData = await HandleAPI.Instance.GetRandomUserAsync();
+
         // var data =  new PlayerMapProgress
         // {
         //     currentMapId = "Map1",
@@ -223,7 +236,7 @@ public class SlotMachine : Singleton<SlotMachine>,IModalUI
         //         ["Gate"] = new BuildingState { level = 1, needRepair = false }
         //     }
         // };
-       GameUI.Instance.OpponentHouseUI.ShowHouse(rs_UserData);
+        GameUI.Instance.OpponentHouseUI.ShowHouse(rs_UserData);
     }
 
     public void BackToSpin()
@@ -234,13 +247,13 @@ public class SlotMachine : Singleton<SlotMachine>,IModalUI
 
         Debug.Log("⬅ Đã quay lại màn hình slot");
     }
-    
+
 
     public void Show()
     {
         slotCanvasGroup.alpha = 1;
         slotCanvasGroup.interactable = true;
-        slotCanvasGroup.blocksRaycasts = true;   
+        slotCanvasGroup.blocksRaycasts = true;
     }
 
     public void Hide()
